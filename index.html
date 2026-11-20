@@ -148,13 +148,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .tb-btn svg{width:16px;height:16px;flex:none}
 .tb-btn .shape{width:20px;height:14px}
 .tb-sep{flex:1}
-.canvas-wrap{position:relative;height:var(--canvas-h,560px);border:1px solid var(--line);border-radius:10px;overflow:hidden;background-color:#fbfbf8;background-image:radial-gradient(#d6d2c7 1px,transparent 1.2px);background-size:22px 22px;touch-action:none}
+.canvas-wrap{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;height:var(--canvas-h,560px);border:1px solid var(--line);border-radius:10px;overflow:hidden;background-color:#fbfbf8;background-image:radial-gradient(#d6d2c7 1px,transparent 1.2px);background-size:22px 22px;touch-action:none}
 #canvas{width:100%;height:100%;display:block;cursor:grab;user-select:none;-webkit-user-select:none}
 #canvas.panning{cursor:grabbing}
 #canvas [data-node]{cursor:move}
 #canvas .handle{opacity:0;transition:opacity .12s;cursor:crosshair}
 #canvas [data-node]:hover .handle,#canvas [data-node].sel .handle{opacity:1}
 #canvas [data-edge]{cursor:pointer}
+#canvas .node-x{cursor:pointer}
+#canvas .node-x:hover circle:nth-child(2){stroke:#cf4a3f}
+#canvas .node-x:hover path{stroke:#cf4a3f}
+@media (hover:hover) and (pointer:fine){#canvas .node-x{opacity:0;transition:opacity .12s}#canvas [data-node]:hover .node-x,#canvas .node-x.on{opacity:1}}
+#canvas [data-node].lifted{filter:drop-shadow(0 8px 12px rgba(20,24,40,.28))}
 .layout-badge{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:20px;padding:4px 6px 4px 11px;font-size:12px;font-weight:650;color:var(--ink2);box-shadow:var(--shadow)}
 .layout-badge .d{width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .layout-badge.manual .d{background:var(--warn)}
@@ -164,7 +169,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .canvas-help{position:absolute;left:10px;bottom:10px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.9);padding:4px 9px;border-radius:7px;pointer-events:none;border:1px solid var(--line)}
 .canvas-empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:var(--muted);text-align:center;font-size:14px;line-height:1.6}
 .canvas-empty b{color:var(--ink2);font-size:15.5px}
-.inline-edit{position:absolute;z-index:3;font:600 13.5px/1.35 var(--font);text-align:center;padding:7px 9px;border:2px solid var(--accent);border-radius:9px;resize:none;box-shadow:0 8px 28px rgba(0,0,0,.18);background:#fff;overflow:hidden}
+.inline-edit{-webkit-user-select:text;user-select:text;position:absolute;z-index:3;font:600 13.5px/1.35 var(--font);text-align:center;padding:7px 9px;border:2px solid var(--accent);border-radius:9px;resize:none;box-shadow:0 8px 28px rgba(0,0,0,.18);background:#fff;overflow:hidden}
 .steps-card{margin:0;padding:16px}
 .step{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fcfbf8;margin-bottom:8px}
 .step.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:#fff}
@@ -215,9 +220,9 @@ dialog::backdrop{background:rgba(20,24,40,.42);backdrop-filter:blur(2px)}
 
 /* ---------- Toasts ---------- */
 #toasts{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;align-items:center;pointer-events:none}
-.toast{background:#1b2030;color:#fff;padding:10px 14px 10px 16px;border-radius:11px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;pointer-events:auto;animation:tin .18s ease-out;max-width:calc(100vw - 30px)}
+.toast{background:#1b2030;color:#fff;padding:10px 14px 10px 16px;border-radius:11px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;pointer-events:none;animation:tin .18s ease-out;max-width:calc(100vw - 30px)}
 .toast.error{background:#8e231b}
-.toast button{border:0;background:rgba(255,255,255,.14);color:#fff;font-weight:700;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12.5px}
+.toast button{pointer-events:auto;border:0;background:rgba(255,255,255,.14);color:#fff;font-weight:700;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12.5px}
 @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ---------- Responsive ---------- */
@@ -337,7 +342,7 @@ dialog::backdrop{background:rgba(20,24,40,.42);backdrop-filter:blur(2px)}
    Einzelne Datei, keine externen Abhängigkeiten.
    ===================================================================== */
 
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 const SCHEMA = 'konzeptwerk/1';
 const STORE_KEY = 'konzeptwerk.v1';
 const SVG_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -390,6 +395,9 @@ const ICONS = {
   open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.7 1.8 1.8.7-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/>',
+  move: '<path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
 };
 const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
@@ -578,7 +586,7 @@ function readHash() { try { return decodeURIComponent(location.hash.slice(1)); }
 let storageWarned = false;
 
 /* ---------------- Speicher (Browser) ---------------- */
-let store = { concepts: {}, currentId: null };
+let store = { concepts: {}, currentId: null, prefs: {} };
 let C = null; // aktuelles Konzept
 let storageOK = true;
 
@@ -588,13 +596,13 @@ function loadStore() {
     if (raw) {
       const d = JSON.parse(raw);
       if (d && d.concepts && typeof d.concepts === 'object') {
-        const out = { concepts: {}, currentId: d.currentId };
+        const out = { concepts: {}, currentId: d.currentId, prefs: (d.prefs && typeof d.prefs === 'object') ? d.prefs : {} };
         Object.values(d.concepts).forEach(c => { try { const n = normalize(c); out.concepts[n.id] = n; } catch (e) { console.warn(e); } });
         return out;
       }
     }
   } catch (e) { storageOK = false; console.warn('localStorage nicht verfügbar', e); }
-  return { concepts: {}, currentId: null };
+  return { concepts: {}, currentId: null, prefs: {} };
 }
 function saveNow() {
   try {
@@ -653,6 +661,9 @@ const ui = {
   sel: null,           // {kind:'node'|'edge', id}
   views: {},           // Zoom/Pan je Diagramm
   pdf: { cover: true, goal: true, audience: true, features: true, flow: true, tech: true, open: true, diagPage: true },
+  coarse: !!(window.matchMedia && matchMedia('(any-pointer: coarse)').matches), // Touch-Gerät (iPad, Handy)
+  penSeen: false,      // Apple Pencil / Stift wurde benutzt
+  lastPen: 0,
 };
 
 /* ---------------- Toasts ---------------- */
@@ -661,7 +672,9 @@ function toast(msg, { type = '', action, fn, ms = 3200 } = {}) {
   t.className = 'toast ' + type;
   t.innerHTML = `<span>${esc(msg)}</span>${action ? `<button>${esc(action)}</button>` : ''}`;
   if (action) t.querySelector('button').onclick = () => { fn && fn(); t.remove(); };
-  $('#toasts').appendChild(t);
+  const box = $('#toasts');
+  box.appendChild(t);
+  while (box.children.length > 2) box.firstElementChild.remove(); // höchstens zwei Hinweise gleichzeitig
   setTimeout(() => t.remove(), action ? Math.max(ms, 6000) : ms);
 }
 
@@ -1039,7 +1052,7 @@ function svgDefs() {
 function diagramInner(d, { editor = false, sel = null } = {}) {
   const M = measured(d);
   const all = [...M.values()];
-  let edges = '', labels = '', nodes = '';
+  let edges = '', labels = '', nodes = '', xBtns = '';
   d.edges.forEach(e => {
     const a = M.get(e.from), b = M.get(e.to);
     if (!a || !b || a === b) return;
@@ -1054,6 +1067,11 @@ function diagramInner(d, { editor = false, sel = null } = {}) {
       const tw = textW(t, 12, 650) + 16;
       labels += `<g${da}><rect x="${r1(m.x - tw / 2)}" y="${r1(m.y - 10.5)}" width="${r1(tw)}" height="21" rx="10.5" fill="#ffffff" stroke="${isSel ? ACCENT : '#cfd4dc'}"/><text x="${r1(m.x)}" y="${r1(m.y + 4.2)}" text-anchor="middle" font-size="12" font-weight="650" fill="${isSel ? ACCENT : '#3a4152'}">${esc(t)}</text></g>`;
     }
+    if (editor && isSel) {
+      const m = g.label, t = str(e.label).trim();
+      const off = t ? (textW(t, 12, 650) + 16) / 2 + 14 : 18;
+      xBtns += delBtn(m.x + off, m.y - (t ? 0 : 16), `data-del-edge="${esc(e.id)}"`, true);
+    }
   });
   all.forEach(n => {
     const isSel = !!(sel && sel.kind === 'node' && sel.id === n.id);
@@ -1063,12 +1081,35 @@ function diagramInner(d, { editor = false, sel = null } = {}) {
     let handle = '';
     if (editor) {
       const TB = d.direction !== 'LR';
-      const hx = TB ? n.x : n.x + n.w / 2 + 13, hy = TB ? n.y + n.h / 2 + 13 : n.y;
-      handle = `<g class="handle" data-handle="${esc(n.id)}"><circle cx="${r1(hx)}" cy="${r1(hy)}" r="15" fill="transparent"/><circle cx="${r1(hx)}" cy="${r1(hy)}" r="9" fill="${ACCENT}"/><path d="M${r1(hx - 4)},${r1(hy)}h8M${r1(hx)},${r1(hy - 4)}v8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`;
+      const big = ui.coarse;               // Finger/Stift: größere Griffe
+      const vr = big ? 11 : 9, hr = big ? 22 : 15, off = big ? 16 : 13;
+      const hx = TB ? n.x : n.x + n.w / 2 + off, hy = TB ? n.y + n.h / 2 + off : n.y;
+      handle = `<g class="handle" data-handle="${esc(n.id)}"><circle cx="${r1(hx)}" cy="${r1(hy)}" r="${hr}" fill="transparent"/><circle cx="${r1(hx)}" cy="${r1(hy)}" r="${vr}" fill="${ACCENT}"/><path d="M${r1(hx - 4.5)},${r1(hy)}h9M${r1(hx)},${r1(hy - 4.5)}v9" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></g>`;
+      // Löschen-X oben rechts am Schritt
+      const xp = nodeCorner(n);
+      handle += delBtn(xp.x, xp.y, `data-del-node="${esc(n.id)}"`, isSel);
     }
-    nodes += `<g${editor ? ` data-node="${esc(n.id)}" class="${isSel ? 'sel' : ''}"` : ''}>${nodeShape(n, isSel)}<text text-anchor="middle" font-size="13.5" font-weight="600" fill="${n.placeholder ? '#9aa1ae' : '#1b2030'}"${n.placeholder ? ' font-style="italic"' : ''}>${txt}</text>${handle}</g>`;
+    nodes += `<g${editor ? ` data-node="${esc(n.id)}" class="${isSel ? 'sel' : ''}${ui.lifted === n.id ? ' lifted' : ''}"` : ''}>${nodeShape(n, isSel)}<text text-anchor="middle" font-size="13.5" font-weight="600" fill="${n.placeholder ? '#9aa1ae' : '#1b2030'}"${n.placeholder ? ' font-style="italic"' : ''}>${txt}</text>${handle}</g>`;
   });
-  return `<g font-family="${SVG_FONT}">${edges}${nodes}${labels}</g>`;
+  return `<g font-family="${SVG_FONT}">${edges}${nodes}${labels}${xBtns}</g>`;
+}
+
+/** Position des Löschen-X (oben rechts, je nach Form) */
+function nodeCorner(n) {
+  const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2;
+  switch (n.type) {
+    case 'decision': return { x: n.x + n.w / 4 + 9, y: n.y - n.h / 4 - 9 };
+    case 'start': case 'end': return { x: x0 + n.w - n.h * 0.16, y: y0 + n.h * 0.16 };
+    case 'data': return { x: x0 + n.w - 2, y: y0 + 9 };
+    default: return { x: x0 + n.w - 2, y: y0 + 2 };
+  }
+}
+/** Rundes X-Symbol mit großer, unsichtbarer Trefferfläche für Finger und Stift */
+function delBtn(x, y, attr, active) {
+  const big = ui.coarse, vr = big ? 11 : 9, hr = big ? 20 : 13, k = big ? 4 : 3.4;
+  return `<g class="node-x${active ? ' on' : ''}" ${attr}><circle cx="${r1(x)}" cy="${r1(y)}" r="${hr}" fill="transparent"/>` +
+    `<circle cx="${r1(x)}" cy="${r1(y)}" r="${vr}" fill="#ffffff" stroke="${active ? '#cf4a3f' : '#b9bec8'}" stroke-width="1.5"/>` +
+    `<path d="M${r1(x - k)},${r1(y - k)}L${r1(x + k)},${r1(y + k)}M${r1(x + k)},${r1(y - k)}L${r1(x - k)},${r1(y + k)}" stroke="${active ? '#cf4a3f' : '#6b7385'}" stroke-width="2" stroke-linecap="round"/></g>`;
 }
 
 function diagramBounds(d) {
@@ -1247,6 +1288,10 @@ function renderFlowSection() {
         <div class="tb-group">
           <button class="tb-btn" data-act="diagram-autolayout" title="Alle Elemente automatisch anordnen">${icon('layout')}<span>Auto-Layout</span></button>
         </div>
+        <div class="tb-group" id="pen-group" ${ui.coarse || ui.penSeen ? '' : 'style="display:none"'} title="Verhalten des Apple Pencil">
+          <button class="tb-btn ${penMode() === 'draw' ? 'on' : ''}" data-act="pen-mode" data-mode="draw" title="Stift zeichnet: Form = neuer Schritt, Linie = Verbindung, Durchkritzeln = löschen, Halten = verschieben">${icon('pen')}<span>Stift zeichnet</span></button>
+          <button class="tb-btn ${penMode() === 'move' ? 'on' : ''}" data-act="pen-mode" data-mode="move" title="Stift verhält sich wie der Finger: ziehen = verschieben">${icon('move')}<span>Stift schiebt</span></button>
+        </div>
         <span class="tb-sep"></span>
         <div class="tb-group">
           <button class="tb-btn" data-act="diagram-export-png" title="Als PNG-Bild herunterladen (z. B. für PowerPoint)">${icon('image')}<span>PNG</span></button>
@@ -1259,11 +1304,12 @@ function renderFlowSection() {
         <svg id="canvas" xmlns="http://www.w3.org/2000/svg">${svgDefs()}<g id="world"><g id="vp"></g><g id="ov"></g></g></svg>
         <div class="layout-badge" id="layout-badge"></div>
         <div class="canvas-empty" id="canvas-empty"></div>
-        <div class="canvas-help">Doppelklick: neuer Schritt / Text ändern · ⊕ ziehen: verbinden · Entf: löschen</div>
+        <div class="canvas-help">Doppelklick: neuer Schritt / Text ändern · ⊕ ziehen: verbinden · ✕ oder Entf: löschen</div>
         <div class="zoom-ctrl">
           <button class="icon-btn" data-act="zoom" data-f="1.2" title="Vergrößern">${icon('zoomIn')}</button>
           <button class="icon-btn" data-act="zoom" data-f="0.8333" title="Verkleinern">${icon('zoomOut')}</button>
           <button class="icon-btn" data-act="zoom-fit" title="Einpassen">${icon('fit')}</button>
+          <button class="icon-btn" data-act="gestures" title="Bedienung & Gesten">${icon('help')}</button>
         </div>
       </div>
       <div class="grid flow-meta">
@@ -1373,6 +1419,7 @@ function deleteSelection() {
   if (s.kind === 'node') { d.nodes = d.nodes.filter(n => n.id !== s.id); d.edges = d.edges.filter(e => e.from !== s.id && e.to !== s.id); }
   else d.edges = d.edges.filter(e => e.id !== s.id);
   ui.sel = null; relayout(d); changed(); renderCanvas(); refreshSteps();
+  toast(s.kind === 'node' ? 'Schritt gelöscht' : 'Verbindung gelöscht', { action: 'Rückgängig', fn: undo });
 }
 
 /* ---- Canvas / Zeichenfläche ---- */
@@ -1436,7 +1483,97 @@ function toWorld(e) {
 }
 
 let drag = null, lastTap = { key: '', t: 0 };
-const pointers = new Map();
+const pointers = new Map();   // aktive Zeiger der laufenden Geste (für Zwei-Finger-Zoom)
+let penTimer = null;
+
+const penMode = () => (store.prefs && store.prefs.penMode) || 'draw';
+function updatePenUI() {
+  const g = $('#pen-group'); if (g) g.style.display = '';
+  renderCanvas();
+}
+function drawInk(pts) {
+  const ov = $('#ov'); if (!ov) return;
+  const k = view().k;
+  ov.innerHTML = `<path d="M${pts.map(p => `${r1(p.x)},${r1(p.y)}`).join(' L')}" fill="none" stroke="${ACCENT}" stroke-width="${r1(2.6 / k)}" stroke-linecap="round" stroke-linejoin="round" opacity=".85" pointer-events="none"/>`;
+}
+function deleteItem(kind, id) {
+  ui.sel = { kind, id };
+  deleteSelection();
+}
+
+/* ---- Apple Pencil: Strich-Erkennung ---- */
+function reversals(pts, axis, thr) {
+  let dir = 0, ext = pts[0][axis], n = 0;
+  for (const p of pts) {
+    const v = p[axis];
+    if (!dir) { if (Math.abs(v - ext) > thr) { dir = Math.sign(v - ext); ext = v; } continue; }
+    if ((v - ext) * dir > 0) ext = v;
+    else if (Math.abs(v - ext) > thr) { n++; dir = -dir; ext = v; }
+  }
+  return n;
+}
+function penStroke(pts) {
+  const d = curD(), k = view().k;
+  const M = measured(d), all = [...M.values()];
+  $('#ov').innerHTML = '';
+  if (pts.length < 3) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, len = 0;
+  pts.forEach((p, i) => { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); if (i) len += Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y); });
+  const bw = x1 - x0, bh = y1 - y0, big = Math.max(bw, bh);
+  const inside = (p, n, m = 8 / k) => Math.abs(p.x - n.x) <= n.w / 2 + m && Math.abs(p.y - n.y) <= n.h / 2 + m;
+  const nodeAt = p => { for (let i = all.length - 1; i >= 0; i--) if (inside(p, all[i])) return all[i]; return null; };
+  const first = pts[0], last = pts[pts.length - 1];
+
+  // 1) Durchkritzeln → löschen
+  const thr = 7 / k;
+  const rev = Math.max(reversals(pts, 'x', thr), reversals(pts, 'y', thr));
+  if (rev >= 3 && len > 2.2 * big) {
+    let best = null, bestN = 0;
+    all.forEach(n => { const c = pts.filter(p => inside(p, n, 4 / k)).length; if (c > bestN) { bestN = c; best = n; } });
+    if (best && bestN >= pts.length * 0.3) { deleteItem('node', best.id); return; }
+    let be = null, bd = 24 / k;
+    d.edges.forEach(e => {
+      const a = M.get(e.from), b = M.get(e.to); if (!a || !b) return;
+      const g = edgeGeom(a, b, e, d, all);
+      g.segs.forEach(sg => { for (let t = 0; t <= 1.0001; t += 0.05) { const q = bez(sg, t); pts.forEach(p => { const dd = Math.hypot(p.x - q.x, p.y - q.y); if (dd < bd) { bd = dd; be = e; } }); } });
+    });
+    if (be) { deleteItem('edge', be.id); return; }
+    return;
+  }
+  const A = nodeAt(first), B = nodeAt(last);
+  // 2) Linie von Schritt zu Schritt → Verbindung
+  if (A && B && A.id !== B.id) {
+    const e = addEdge(d, A.id, B.id);
+    if (e) { ui.sel = { kind: 'edge', id: e.id }; relayout(d); changed(); refreshSteps(); renderCanvas(); }
+    return;
+  }
+  // 3) Linie von Schritt ins Leere → neuer Schritt am Ende
+  if (A && !B && len > 50 / k) {
+    const nn = addNode('process', '', { from: A.id, at: last });
+    changed(); refreshSteps(); renderCanvas(); inlineEdit('node', nn.id);
+    return;
+  }
+  if (A || B) return;
+  // 4) Geschlossene Form im Leeren → neuer Schritt (Rechteck, Oval, Raute)
+  const closed = Math.hypot(first.x - last.x, first.y - last.y) < 0.35 * big + 12 / k;
+  if (!closed || bw < 36 / k || bh < 22 / k) {
+    if (len > 60 / k) toast('Nicht erkannt – zeichne ein Rechteck, Oval oder eine Raute.', { ms: 2200 });
+    return;
+  }
+  const hd = Math.hypot(bw, bh) / 2;
+  const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const cd = corners.reduce((s, [cx, cy]) => s + Math.min(...pts.map(p => Math.hypot(p.x - cx, p.y - cy))), 0) / 4 / hd;
+  // Flächenverhältnis Form/Umriss: Rechteck ≈ 1, Oval ≈ 0,79, Raute ≈ 0,5
+  let area = 0;
+  pts.forEach((p, i) => { const q = pts[(i + 1) % pts.length]; area += p.x * q.y - q.x * p.y; });
+  const fill = Math.abs(area) / 2 / (bw * bh);
+  let type = (cd < 0.15 || fill > 0.87) ? 'process' : fill < 0.64 ? 'decision' : 'oval';
+  if (type === 'oval') type = d.nodes.some(n => n.type === 'start') ? 'end' : 'start';
+  const nn = addNode(type, '', { at: { x: (x0 + x1) / 2, y: (y0 + y1) / 2 } });
+  changed(); refreshSteps(); renderCanvas();
+  toast(`${NODE_TYPES[type].label} erkannt – jetzt Text schreiben`, { ms: 1800 });
+  inlineEdit('node', nn.id);
+}
 
 function initCanvas() {
   const svg = $('#canvas');
@@ -1445,35 +1582,70 @@ function initCanvas() {
 
   svg.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    // Fokus selbst steuern (offene Eingaben übernehmen), damit der Browser ihn nicht verschiebt
+    const isPen = e.pointerType === 'pen', isTouch = e.pointerType === 'touch';
+    if (isPen) { ui.lastPen = Date.now(); if (!ui.penSeen) { ui.penSeen = true; ui.coarse = true; updatePenUI(); } }
+    // Handballen-Erkennung: Finger ignorieren, solange bzw. kurz nachdem der Stift aufliegt
+    if (isTouch && ([...pointers.values()].some(p => p.type === 'pen') || Date.now() - ui.lastPen < 350)) { e.preventDefault(); return; }
+    if ((isTouch || isPen) && !ui.coarse) { ui.coarse = true; updatePenUI(); }
     if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
     e.preventDefault();
-    svg.setPointerCapture(e.pointerId);
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // Neue Geste beginnt: Reste früherer Gesten verwerfen (Ursache für "Wischen zoomt")
+    if (e.isPrimary) { pointers.clear(); drag = null; }
+    try { svg.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+    clearTimeout(penTimer);
     const v = view();
-    if (pointers.size === 2) {
-      const [a, b] = [...pointers.values()];
-      drag = { mode: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y), k0: v.k, tx0: v.tx, ty0: v.ty, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+    if (pointers.size >= 2) {
+      const touches = [...pointers.values()].filter(p => p.type === 'touch');
+      if (touches.length === 2) {
+        const [a, b] = touches;
+        $('#ov').innerHTML = ''; ui.lifted = null;
+        drag = { mode: 'pinch', d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), k0: v.k, tx0: v.tx, ty0: v.ty, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+      }
       return;
     }
     const t = e.target;
+    const xN = t.closest('[data-del-node]'), xE = t.closest('[data-del-edge]');
+    if (xN || xE) {
+      drag = null; pointers.delete(e.pointerId);
+      deleteItem(xN ? 'node' : 'edge', xN ? xN.dataset.delNode : xE.dataset.delEdge);
+      return;
+    }
     const h = t.closest('[data-handle]'), n = t.closest('[data-node]'), ed = t.closest('[data-edge]');
     const w = toWorld(e);
     const key = h ? 'h' : n ? 'n:' + n.dataset.node : ed ? 'e:' + ed.dataset.edge : 'bg';
-    const dbl = key === lastTap.key && Date.now() - lastTap.t < 380;
-    lastTap = { key, t: Date.now() };
+    // Doppeltippen nur nach einem echten Tippen (ohne Bewegung) werten
+    const dbl = key === lastTap.key && Date.now() - lastTap.t < 400;
+    if (dbl) lastTap = { key: '', t: 0 };
     const d = curD();
+    const prevSel = ui.sel ? { ...ui.sel } : null;
+    const pid = e.pointerId;
     if (h) {
-      drag = { mode: 'connect', from: h.dataset.handle, x: w.x, y: w.y, sx: e.clientX, sy: e.clientY };
+      drag = { mode: 'connect', pid, key, from: h.dataset.handle, sx: e.clientX, sy: e.clientY };
       ui.sel = { kind: 'node', id: h.dataset.handle };
+    } else if (isPen && penMode() === 'draw' && !dbl) {
+      // Apple Pencil (Zeichnen): Tippen = auswählen/Text, Strich = Geste, Halten = verschieben
+      drag = { mode: 'pen', pid, key, pts: [w], sx: e.clientX, sy: e.clientY, node: n ? n.dataset.node : null, edge: ed ? ed.dataset.edge : null, prevSel, stroke: false };
+      if (n) {
+        const nodeId = n.dataset.node;
+        penTimer = setTimeout(() => {
+          if (!drag || drag.mode !== 'pen' || drag.stroke) return;
+          const node = curD().nodes.find(x => x.id === nodeId); if (!node) return;
+          const ww = drag.pts[drag.pts.length - 1];
+          drag = { mode: 'move', pid, key: '', id: nodeId, dx: ww.x - node.x, dy: ww.y - node.y, sx: drag.sx, sy: drag.sy, moved: false };
+          ui.sel = { kind: 'node', id: nodeId }; ui.lifted = nodeId;
+          renderCanvas(); scrollStepIntoView();
+        }, 380);
+      }
+      return;
     } else if (n) {
       const node = d.nodes.find(x => x.id === n.dataset.node);
       ui.sel = { kind: 'node', id: node.id };
       if (dbl) { drag = null; pointers.clear(); renderCanvas(); inlineEdit('node', node.id); return; }
-      drag = { mode: 'move', id: node.id, dx: w.x - node.x, dy: w.y - node.y, sx: e.clientX, sy: e.clientY, moved: false };
+      drag = { mode: 'move', pid, key, id: node.id, dx: w.x - node.x, dy: w.y - node.y, sx: e.clientX, sy: e.clientY, moved: false };
     } else if (ed) {
       ui.sel = { kind: 'edge', id: ed.dataset.edge };
-      drag = null;
+      drag = { mode: 'tap', pid, key, sx: e.clientX, sy: e.clientY };
       if (dbl) { pointers.clear(); renderCanvas(); inlineEdit('edge', ed.dataset.edge); return; }
     } else {
       if (dbl) {
@@ -1482,7 +1654,7 @@ function initCanvas() {
         changed(); renderCanvas(); refreshSteps(); inlineEdit('node', node.id); return;
       }
       ui.sel = null;
-      drag = { mode: 'pan', sx: e.clientX, sy: e.clientY, tx: v.tx, ty: v.ty };
+      drag = { mode: 'pan', pid, key, sx: e.clientX, sy: e.clientY, tx: v.tx, ty: v.ty };
       svg.classList.add('panning');
     }
     renderCanvas();
@@ -1490,11 +1662,13 @@ function initCanvas() {
   });
 
   svg.addEventListener('pointermove', e => {
-    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.has(e.pointerId)) { const p = pointers.get(e.pointerId); p.x = e.clientX; p.y = e.clientY; }
     if (!drag) return;
     const v = view(), d = curD();
-    if (drag.mode === 'pinch' && pointers.size === 2) {
-      const [a, b] = [...pointers.values()];
+    if (drag.mode === 'pinch') {
+      const touches = [...pointers.values()].filter(p => p.type === 'touch');
+      if (touches.length !== 2) return;
+      const [a, b] = touches;
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       const r = svg.getBoundingClientRect();
       const k2 = clamp(drag.k0 * dist / drag.d0, 0.2, 2.5);
@@ -1503,7 +1677,15 @@ function initCanvas() {
       v.ty = cy - (cy - drag.ty0) * (k2 / drag.k0) + ((a.y + b.y) / 2 - drag.my);
       v.k = k2; applyView(); return;
     }
+    if (e.pointerId !== drag.pid) return;
     if (drag.mode === 'pan') { v.tx = drag.tx + e.clientX - drag.sx; v.ty = drag.ty + e.clientY - drag.sy; applyView(); return; }
+    if (drag.mode === 'pen') {
+      const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+      (evs.length ? evs : [e]).forEach(ev => drag.pts.push(toWorld(ev)));
+      if (!drag.stroke && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) { drag.stroke = true; clearTimeout(penTimer); }
+      if (drag.stroke) drawInk(drag.pts);
+      return;
+    }
     const w = toWorld(e);
     if (drag.mode === 'move') {
       if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
@@ -1512,7 +1694,7 @@ function initCanvas() {
       node.x = Math.round((w.x - drag.dx) / 2) * 2; node.y = Math.round((w.y - drag.dy) / 2) * 2;
       renderCanvas();
     } else if (drag.mode === 'connect') {
-      const from = measured(d).get(drag.from);
+      const from = measured(d).get(drag.from); if (!from) return;
       const TB = d.direction !== 'LR';
       const sx = TB ? from.x : from.x + from.w / 2, sy = TB ? from.y + from.h / 2 : from.y;
       $('#ov').innerHTML = `<path d="M${r1(sx)},${r1(sy)} L${r1(w.x)},${r1(w.y)}" stroke="${ACCENT}" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#kw-arr-sel)" pointer-events="none"/>`;
@@ -1523,29 +1705,58 @@ function initCanvas() {
     pointers.delete(e.pointerId);
     svg.classList.remove('panning');
     if (!drag) return;
-    const d = curD();
     if (drag.mode === 'pinch') { if (pointers.size < 2) drag = null; return; }
-    if (drag.mode === 'move' && drag.moved) {
-      if (d.layout === 'auto') { d.layout = 'manual'; d.edges.forEach(x => delete x.via); }
-      changed(); renderCanvas();
-    } else if (drag.mode === 'connect') {
+    if (e.pointerId !== drag.pid) return;
+    clearTimeout(penTimer);
+    const d = curD();
+    const g = drag; drag = null;
+    const cancelled = e.type === 'pointercancel' || e.type === 'lostpointercapture';
+    const movedPx = Math.hypot(e.clientX - (g.sx ?? e.clientX), e.clientY - (g.sy ?? e.clientY));
+    const wasTap = !cancelled && (g.mode === 'pen' ? !g.stroke : g.mode === 'move' ? !g.moved : movedPx < 6);
+    lastTap = wasTap && g.key ? { key: g.key, t: Date.now() } : { key: '', t: 0 };
+    if (g.mode === 'pen') {
+      if (cancelled) { $('#ov').innerHTML = ''; return; }
+      if (!g.stroke) { // Tippen mit dem Stift
+        if (g.node) {
+          if (g.prevSel && g.prevSel.kind === 'node' && g.prevSel.id === g.node) { renderCanvas(); inlineEdit('node', g.node); return; }
+          ui.sel = { kind: 'node', id: g.node };
+        } else if (g.edge) {
+          if (g.prevSel && g.prevSel.kind === 'edge' && g.prevSel.id === g.edge) { renderCanvas(); inlineEdit('edge', g.edge); return; }
+          ui.sel = { kind: 'edge', id: g.edge };
+        } else ui.sel = null;
+        renderCanvas(); scrollStepIntoView(); return;
+      }
+      g.pts.push(toWorld(e));
+      penStroke(g.pts);
+      return;
+    }
+    if (g.mode === 'move') {
+      ui.lifted = null;
+      if (g.moved) {
+        if (d.layout === 'auto') { d.layout = 'manual'; d.edges.forEach(x => delete x.via); }
+        changed();
+      }
+      renderCanvas();
+    } else if (g.mode === 'connect') {
       $('#ov').innerHTML = '';
+      if (cancelled) return;
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const tn = el && el.closest && el.closest('#canvas [data-node]');
-      if (tn && tn.dataset.node !== drag.from) {
-        const ed = addEdge(d, drag.from, tn.dataset.node);
+      if (tn && tn.dataset.node !== g.from) {
+        const ed = addEdge(d, g.from, tn.dataset.node);
         if (ed) { ui.sel = { kind: 'edge', id: ed.id }; relayout(d); changed(); refreshSteps(); renderCanvas(); }
-      } else if (!tn && el && el.closest && el.closest('#canvas') && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 30) {
+      } else if (!tn && el && el.closest && el.closest('#canvas') && Math.hypot(e.clientX - g.sx, e.clientY - g.sy) > 30) {
         const w = toWorld(e);
-        const fromNode = d.nodes.find(n => n.id === drag.from);
+        const fromNode = d.nodes.find(n => n.id === g.from);
         const nn = addNode('process', '', { from: fromNode ? fromNode.id : null, at: w });
         changed(); refreshSteps(); renderCanvas(); inlineEdit('node', nn.id);
       }
     }
-    drag = null;
   };
   svg.addEventListener('pointerup', end);
   svg.addEventListener('pointercancel', end);
+  svg.addEventListener('lostpointercapture', e => { if (drag && drag.pid === e.pointerId && drag.mode !== 'connect' && drag.mode !== 'pen') end(e); else pointers.delete(e.pointerId); });
+  svg.addEventListener('contextmenu', e => e.preventDefault());
 
   svg.addEventListener('wheel', e => {
     e.preventDefault();
@@ -1584,6 +1795,7 @@ function inlineEdit(kind, id) {
   ta.className = 'inline-edit';
   ta.value = item.label || '';
   ta.placeholder = kind === 'node' ? 'Bezeichnung' : 'Beschriftung';
+  if (ui.penSeen || ui.coarse) { w = Math.max(w, 230); h = Math.max(h, 64); ta.style.fontSize = '16px'; }
   const sx = cx * v.k + v.tx, sy = cy * v.k + v.ty;
   Object.assign(ta.style, { left: `${sx - w / 2}px`, top: `${sy - h / 2}px`, width: `${w}px`, height: `${h}px` });
   wrap.appendChild(ta);
@@ -2071,6 +2283,42 @@ const ACTIONS = {
   'diagram-copy-mermaid'() { copyText(toMermaid(curD()), 'Mermaid-Code kopiert'); },
   zoom(el) { const r = $('#canvas').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, +el.dataset.f); },
   'zoom-fit'() { fitView(); },
+  'pen-mode'(el) {
+    store.prefs = store.prefs || {}; store.prefs.penMode = el.dataset.mode; saveNow();
+    $$('[data-act=pen-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === el.dataset.mode));
+    toast(el.dataset.mode === 'draw' ? 'Stift zeichnet: Formen, Linien und Durchkritzeln werden erkannt' : 'Stift schiebt: ziehen verschiebt Schritte, wie mit dem Finger', { ms: 2600 });
+  },
+  gestures() {
+    const row = (a, b) => `<tr><td style="padding:7px 10px 7px 0;font-weight:650;vertical-align:top;width:40%">${a}</td><td style="padding:7px 0;color:var(--ink2)">${b}</td></tr>`;
+    openModal('Bedienung der Zeichenfläche', `
+      <h3 style="margin:0 0 4px;font-size:14px">${icon('pen').replace('<svg', '<svg style="width:15px;height:15px;vertical-align:-2px"')} Apple Pencil <span class="hint">(Modus „Stift zeichnet“)</span></h3>
+      <table style="border-collapse:collapse;font-size:13.5px;width:100%;margin-bottom:14px">
+        ${row('Rechteck zeichnen', 'neuer <b>Schritt</b>')}
+        ${row('Raute zeichnen', 'neue <b>Entscheidung</b>')}
+        ${row('Oval zeichnen', '<b>Start</b> (bzw. <b>Ende</b>, wenn es schon einen Start gibt)')}
+        ${row('Linie Schritt → Schritt', '<b>Verbindung</b> anlegen')}
+        ${row('Linie Schritt → leere Fläche', 'neuen Schritt anhängen')}
+        ${row('Durchkritzeln', 'Schritt oder Verbindung <b>löschen</b>')}
+        ${row('Tippen', 'auswählen – nochmal tippen: <b>Text schreiben</b> (Handschrift wird per Scribble zu Text)')}
+        ${row('Halten + ziehen', 'Schritt <b>verschieben</b>')}
+      </table>
+      <h3 style="margin:0 0 4px;font-size:14px">Finger</h3>
+      <table style="border-collapse:collapse;font-size:13.5px;width:100%;margin-bottom:14px">
+        ${row('Schritt ziehen', 'verschieben')}
+        ${row('Leere Fläche ziehen', 'Ansicht verschieben')}
+        ${row('Zwei Finger', 'zoomen und verschieben')}
+        ${row('Doppeltippen', 'Text ändern bzw. neuer Schritt')}
+        ${row('⊕ am Schritt ziehen', 'Verbindung oder neuen Schritt anlegen')}
+        ${row('✕ am Schritt', 'Schritt löschen (mit „Rückgängig“)')}
+      </table>
+      <h3 style="margin:0 0 4px;font-size:14px">Maus & Tastatur</h3>
+      <table style="border-collapse:collapse;font-size:13.5px;width:100%">
+        ${row('Doppelklick', 'Text ändern bzw. neuer Schritt')}
+        ${row('Mausrad', 'zoomen')}
+        ${row('Entf · F2 · Esc', 'löschen · Text bearbeiten · Auswahl aufheben')}
+      </table>
+      <p class="note" style="margin:14px 0 0">Handballen auf dem Display werden ignoriert, solange der Stift aufliegt. Soll der Stift einfach wie ein Finger schieben, stelle in der Werkzeugleiste auf <b>„Stift schiebt“</b>.</p>`);
+  },
   'node-add'(el) {
     const d = curD();
     const from = ui.sel && ui.sel.kind === 'node' ? ui.sel.id : (d.nodes.length ? d.nodes[d.nodes.length - 1].id : null);
