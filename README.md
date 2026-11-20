@@ -2,7 +2,7 @@
 
 Web-App, mit der du Softwarekonzepte für Vibe-Coding entwickelst: Name, Ziel, Key-Funktionen und Ablaufdiagramm. Konzepte lassen sich speichern, exportieren und importieren, als PDF präsentieren und als fertiger Prompt an Claude übergeben.
 
-Die ganze App steckt in **einer Datei** (`index.html`). Sie kommt ohne Server, Build-Schritt und externe Bibliotheken aus.
+Die ganze App steckt in **einer Datei** (`index.html`). Sie kommt ohne Server, Build-Schritt und Internet-Abhängigkeiten aus. Die PDF-Bibliothek ist direkt eingebaut.
 
 ## Funktionen
 
@@ -33,8 +33,11 @@ Für das Diagramm gibt es zwei Wege, die sich frei kombinieren lassen:
 - Der Browser-Speicher gilt nur für das jeweilige Gerät und den jeweiligen Browser. Willst du sichern, das Gerät wechseln oder das Konzept an Kollegen weitergeben, nutze die JSON-Datei (z. B. in OneDrive ablegen).
 
 ### PDF
-Klick auf **PDF**, Abschnitte auswählen (z. B. für Kunden ohne „Offene Punkte“) und dann im Druckdialog **„Als PDF speichern“** wählen. Das PDF enthält Deckblatt, Inhaltsverzeichnis, Tabellen, Diagramme und Seitenzahlen.
-Tipp: Im Druckdialog die Browser-Kopf- und Fußzeilen ausschalten und die Hintergrundgrafiken einschalten.
+Klick auf **PDF** und wähle die Abschnitte aus (z. B. für Kunden ohne „Offene Punkte“). Die App erzeugt das PDF selbst, ganz ohne Druckdialog. Es enthält Deckblatt, Inhaltsverzeichnis, Tabellen, Seitenzahlen und das Ablaufdiagramm als scharfe Vektorgrafik.
+- **PC/Mac:** Die Datei landet im Download-Ordner.
+- **iPad/iPhone:** Es öffnet sich das Teilen-Menü (z. B. „In Dateien sichern“, Mail, Teams). Das funktioniert auch, wenn die App über „Zum Home-Bildschirm“ gestartet wurde.
+
+JSON-Export, PNG/SVG und Prompt-Download nutzen auf iPad und iPhone ebenfalls das Teilen-Menü.
 
 ### Tastenkürzel
 | Kürzel | Aktion |
@@ -61,6 +64,8 @@ Für ein **Update** ersetzt du einfach `index.html` im Repository (Upload mit gl
 - Die App funktioniert auch ohne GitHub: `index.html` per Doppelklick lokal öffnen.
 
 ## Technik
-- Vanilla HTML/CSS/JavaScript in einer Datei, keine Abhängigkeiten, keine Cookies, kein Tracking.
+- Vanilla HTML/CSS/JavaScript in einer Datei (ca. 700 KB), keine Cookies, kein Tracking.
+- Eingebettet: [pdf-lib](https://github.com/Hopding/pdf-lib) 1.17.1 (MIT-Lizenz) für die PDF-Erzeugung.
+- Als Home-Bildschirm-App auf dem iPad geeignet (eigenes Icon, Abstand zur Statusleiste).
 - Datenformat: JSON (`schema: "konzeptwerk/1"`). Ältere oder unvollständige Dateien werden beim Import automatisch ergänzt.
 - Getestet in Chrome (Desktop und Smartphone-Ansicht). Edge, Safari und Firefox in aktuellen Versionen sollten ebenso funktionieren.
