@@ -15,7 +15,7 @@ Die ganze App steckt in **einer Datei** (`index.html`). Sie kommt ohne Server, B
 | Ablauf | Diagramm-Editor (siehe unten), mehrere Diagramme pro Konzept |
 | Daten & Technik | Plattform, Tech-Stack, Datenmodell, Schnittstellen |
 | Offene Punkte & Risiken | Annahmen, offene Fragen mit Status, Risiken mit Bewertung und Maßnahme |
-| Vibe-Coding-Prompt | Erzeugt aus dem Konzept einen fertigen Prompt (Zielplattform und Vorgehen wählbar), dazu Markdown-Export |
+| Vibe-Coding-Prompt | Erzeugt aus dem Konzept einen fertigen Prompt. Wählbar sind Zielplattform, Vorgehen und Sprache der Oberfläche; die Umsetzungsanforderungen lassen sich ab-/anwählen, umformulieren und ergänzen. Dazu gibt es einen Markdown-Export |
 
 ### Ablaufdiagramm
 Für das Diagramm gibt es zwei Wege, die sich frei kombinieren lassen:

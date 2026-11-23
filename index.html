@@ -202,6 +202,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .seg label{padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:650;font-size:13px;color:var(--ink2)}
 .seg input{position:absolute;opacity:0;pointer-events:none}
 .seg label:has(input:checked){background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.req-list{display:flex;flex-direction:column;gap:6px}
+.req-count{font-size:12px;font-weight:650;color:var(--muted);margin-bottom:4px}
+.req{display:flex;gap:10px;align-items:flex-start;padding:8px 6px 8px 10px;border:1px solid var(--line);border-radius:10px;background:#fcfbf8}
+.req.off{background:var(--bg);opacity:.62}
+.req.off textarea{text-decoration:line-through;text-decoration-color:#a3a9b6}
+.req-chk{width:18px;height:18px;margin:9px 0 0;accent-color:var(--accent);flex:none;cursor:pointer}
+.req-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.req-body textarea{min-height:36px;padding:6px 9px;font-size:13.5px;background:#fff}
+.req-tag{font-size:11px;font-weight:650;color:var(--muted)}
+.req-tag.pf{color:#2f7fbf}
+.req-tag.own{color:var(--accent)}
+.req .icon-btn{margin-top:2px}
 .prompt-out{white-space:pre-wrap;word-break:break-word;font:12.5px/1.6 var(--mono);background:#191d2a;color:#e6e8ef;border-radius:10px;padding:18px 20px;max-height:620px;overflow:auto;margin:0}
 .prompt-stats{font-size:12px;color:var(--muted)}
 
@@ -369,7 +381,7 @@ dialog::backdrop{background:rgba(20,24,40,.42);backdrop-filter:blur(2px)}
    Einzelne Datei, keine externen Abhängigkeiten.
    ===================================================================== */
 
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 const SCHEMA = 'konzeptwerk/1';
 const STORE_KEY = 'konzeptwerk.v1';
 const SVG_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -479,6 +491,21 @@ const MODES = {
   plan: { label: 'Erst Plan', text: 'Erstelle zuerst einen Umsetzungsplan (Architektur, Datenstruktur, Screens bzw. Komponenten, Reihenfolge der Schritte) und warte auf meine Freigabe, bevor du Code schreibst.' },
 };
 
+const LANGS = {
+  de: { label: 'Deutsch', text: 'Benutzeroberfläche komplett auf Deutsch (alle Texte, Beschriftungen und Meldungen).' },
+  en: { label: 'Englisch', text: 'Benutzeroberfläche komplett auf Englisch (alle Texte, Beschriftungen und Meldungen).' },
+  both: { label: 'Zweisprachig', text: 'Benutzeroberfläche zweisprachig Deutsch/Englisch mit Sprachumschalter; Standardsprache Deutsch.' },
+  none: { label: 'Keine Vorgabe', text: '' },
+};
+/** Allgemeine Standardanforderungen (Schlüssel bleiben stabil, damit Änderungen erhalten bleiben) */
+const STD_REQS = [
+  ['g-ui', 'Klar strukturierte, moderne Oberfläche; auch auf Tablet und Smartphone bedienbar.'],
+  ['g-prio', 'Alle **Must-have**-Funktionen vollständig umsetzen, Should-have so weit sinnvoll, Could-have höchstens vorbereiten. Won\'t-have nicht umsetzen.'],
+  ['g-flow', 'Den beschriebenen Ablauf und die Rollen genau abbilden.'],
+  ['g-data', 'Realistische Beispieldaten mitliefern, damit die Anwendung sofort testbar ist.'],
+  ['g-err', 'Leere Zustände, Eingabefehler und Sonderfälle sinnvoll behandeln.'],
+];
+
 const SECTIONS = [
   { id: 'overview', label: 'Übersicht' },
   { id: 'goal', label: 'Ziel' },
@@ -554,7 +581,7 @@ function newConcept() {
     diagrams: [newDiagram()],
     tech: { platform: '', stack: '', dataObjects: [], integrations: '' },
     open: { questions: [], risks: [], assumptions: '' },
-    prompt: { target: 'html', mode: 'build', extra: '' },
+    prompt: { target: 'html', mode: 'build', extra: '', language: 'de', reqOff: {}, reqEdit: {}, reqCustom: [] },
   };
 }
 function deepMerge(base, src) {
@@ -569,9 +596,17 @@ function deepMerge(base, src) {
 }
 function normalize(raw) {
   const c = deepMerge(newConcept(), raw || {});
+  const OBJ_KEYS = ['reqOff', 'reqEdit', 'reqCustom'];
   ['meta', 'goal', 'audience', 'tech', 'open', 'prompt'].forEach(sec => {
-    Object.keys(c[sec]).forEach(k => { if (!Array.isArray(c[sec][k]) && typeof c[sec][k] !== 'string') c[sec][k] = str(c[sec][k]); });
+    Object.keys(c[sec]).forEach(k => { if (OBJ_KEYS.includes(k)) return; if (!Array.isArray(c[sec][k]) && typeof c[sec][k] !== 'string') c[sec][k] = str(c[sec][k]); });
   });
+  { // Anforderungen an die Umsetzung
+    const pr = c.prompt, isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+    if (!LANGS[pr.language]) pr.language = 'de';
+    pr.reqOff = isObj(pr.reqOff) ? Object.fromEntries(Object.entries(pr.reqOff).filter(([, v]) => v === true)) : {};
+    pr.reqEdit = isObj(pr.reqEdit) ? Object.fromEntries(Object.entries(pr.reqEdit).filter(([, v]) => typeof v === 'string')) : {};
+    pr.reqCustom = (Array.isArray(pr.reqCustom) ? pr.reqCustom : []).filter(x => x && typeof x === 'object').map(x => ({ id: str(x.id) || uid('r'), text: str(x.text), on: x.on !== false }));
+  }
   Object.keys(LISTS).forEach(p => {
     let a = getPath(c, p);
     if (!Array.isArray(a)) { a = []; setPath(c, p, a); }
@@ -894,8 +929,15 @@ const RENDER = {
     <div class="card"><div class="grid">
       <div class="field s6"><span class="lbl">Zielplattform</span>${seg('target', TARGETS, p.target)}</div>
       <div class="field s6"><span class="lbl">Vorgehen der KI</span>${seg('mode', MODES, p.mode)}</div>
-      ${field({ label: 'Zusätzliche Hinweise an die KI', bind: 'prompt.extra', type: 'textarea', ph: 'z. B. Firmenfarben, bestehende Listen, besondere Wünsche an Design oder Code', span: 6 })}
+      ${field({ label: 'Zusätzliche Hinweise an die KI', bind: 'prompt.extra', type: 'textarea', ph: 'z. B. bestehende Listen, Hintergrund zum Projekt, besondere Wünsche an Design oder Code', span: 6 })}
     </div></div>
+    <div class="card">
+      <div class="card-head"><div><h2>Anforderungen an die Umsetzung</h2><p>Abgewählte Punkte erscheinen nicht im Prompt. Texte kannst du direkt ändern – Änderungen gelten nur für dieses Konzept.</p></div>
+        <div class="right"><button class="btn small" data-act="req-restore" title="Alle Standardanforderungen wiederherstellen und eigene entfernen">${icon('undo')} Standard wiederherstellen</button></div></div>
+      <div class="field" style="margin-bottom:14px"><span class="lbl">Sprache der Oberfläche</span>${seg('language', LANGS, p.language)}</div>
+      <div class="req-list" id="req-list">${renderReqs()}</div>
+      <button class="btn add-btn" data-act="req-add" style="margin-top:10px">${icon('plus')} Eigene Anforderung hinzufügen</button>
+    </div>
     <div class="card">
       <div class="card-head"><div><h2>Generierter Prompt</h2><p class="prompt-stats" id="prompt-stats"></p></div>
         <div class="right">
@@ -1928,17 +1970,48 @@ function conceptMarkdown(c) {
   return L.join('\n\n');
 }
 
+/** Alle Anforderungen (Standard, Plattform, eigene) mit aktuellem Text und Status */
+function reqList() {
+  const p = C.prompt, t = TARGETS[p.target] || TARGETS.free;
+  const std = [...STD_REQS.map(([key, text]) => ({ key, def: text, kind: 'std' })),
+    ...t.reqs.map((text, i) => ({ key: `${p.target}-${i + 1}`, def: text, kind: 'platform' }))];
+  return [
+    ...std.map(r => ({ ...r, text: p.reqEdit[r.key] ?? r.def, on: !p.reqOff[r.key], edited: p.reqEdit[r.key] != null && p.reqEdit[r.key] !== r.def })),
+    ...p.reqCustom.map((r, i) => ({ key: r.id, i, text: r.text, on: r.on, kind: 'own' })),
+  ];
+}
+function activeReqs() {
+  const lang = LANGS[C.prompt.language] || LANGS.de;
+  return [...(lang.text ? [lang.text] : []), ...reqList().filter(r => r.on && r.text.trim()).map(r => r.text.trim())];
+}
+function renderReqs() {
+  const list = reqList();
+  const on = list.filter(r => r.on && r.text.trim()).length;
+  const tag = { std: ['Standard', ''], platform: [`Plattform: ${TARGETS[C.prompt.target].label}`, 'pf'], own: ['Eigene', 'own'] };
+  return `<div class="req-count">${on} von ${list.length} Anforderungen aktiv${C.prompt.language !== 'none' ? ' + Sprache' : ''}</div>` + list.map(r => `
+    <div class="req ${r.on ? '' : 'off'}" data-req-row="${esc(r.key)}">
+      <input type="checkbox" class="req-chk" ${r.on ? 'checked' : ''} ${r.kind === 'own' ? `data-bind="prompt.reqCustom.${r.i}.on"` : `data-req-key="${esc(r.key)}" data-req-field="on"`} title="Im Prompt verwenden">
+      <div class="req-body">
+        <textarea rows="1" ${r.kind === 'own' ? `data-bind="prompt.reqCustom.${r.i}.text"` : `data-req-key="${esc(r.key)}" data-req-field="text"`} placeholder="Eigene Anforderung, z. B. „Firmenfarben verwenden“">${esc(r.text)}</textarea>
+        <span class="req-tag ${tag[r.kind][1]}">${esc(tag[r.kind][0])}${r.edited ? ' · geändert' : ''}</span>
+      </div>
+      ${r.kind === 'own'
+        ? `<button class="icon-btn danger" data-act="req-del" data-i="${r.i}" title="Eigene Anforderung löschen">${icon('trash')}</button>`
+        : `<button class="icon-btn" data-act="req-reset" data-key="${esc(r.key)}" title="Originaltext wiederherstellen" ${r.edited ? '' : 'disabled'}>${icon('undo')}</button>`}
+    </div>`).join('');
+}
+function refreshReqs() {
+  const el = $('#req-list'); if (!el) return;
+  const f = document.activeElement, key = f && f.closest && f.closest('[data-req-row]') ? f.closest('[data-req-row]').dataset.reqRow : null;
+  el.innerHTML = renderReqs();
+  $$('#req-list textarea').forEach(autoGrow);
+  if (key) { const t = $(`#req-list [data-req-row="${CSS.escape(key)}"] textarea`); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }
+}
+
 function buildPrompt() {
   const p = C.prompt, t = TARGETS[p.target] || TARGETS.free;
   const name = C.meta.name.trim() || 'die Anwendung';
-  const reqs = [
-    'Benutzeroberfläche auf Deutsch, klar strukturiert und modern; auch auf Tablet und Smartphone bedienbar.',
-    'Alle **Must-have**-Funktionen vollständig umsetzen, Should-have so weit sinnvoll, Could-have höchstens vorbereiten. Won\'t-have nicht umsetzen.',
-    'Den beschriebenen Ablauf und die Rollen genau abbilden.',
-    'Realistische Beispieldaten mitliefern, damit die Anwendung sofort testbar ist.',
-    'Leere Zustände, Eingabefehler und Sonderfälle sinnvoll behandeln.',
-    ...t.reqs,
-  ];
+  const reqs = activeReqs();
   const parts = [
     `# Auftrag: „${name}“ umsetzen`,
     'Du bist ein erfahrener Software-Entwickler mit gutem Gespür für UX. Setze die unten beschriebene Software auf Basis des folgenden Konzepts um.',
@@ -1946,8 +2019,8 @@ function buildPrompt() {
     '---',
     conceptMarkdown(C),
     '---',
-    `## Anforderungen an die Umsetzung\n${reqs.map(r => `- ${r}`).join('\n')}`,
   ];
+  if (reqs.length) parts.push(`## Anforderungen an die Umsetzung\n${reqs.map(r => `- ${r}`).join('\n')}`);
   if (p.extra.trim()) parts.push(`## Zusätzliche Hinweise\n${p.extra.trim()}`);
   parts.push(`## Vorgehen\n${MODES[p.mode].text}`);
   return parts.join('\n\n');
@@ -2633,6 +2706,25 @@ const ACTIONS = {
     [arr[i], arr[j]] = [arr[j], arr[i]]; changed(); renderMain(false);
   },
 
+  /* Anforderungen */
+  'req-add'() {
+    const r = { id: uid('r'), text: '', on: true };
+    C.prompt.reqCustom.push(r); changed(); refreshReqs(); updatePromptOut();
+    const t = $(`#req-list [data-req-row="${CSS.escape(r.id)}"] textarea`); t && t.focus();
+  },
+  'req-del'(el) {
+    C.prompt.reqCustom.splice(+el.dataset.i, 1); changed(); refreshReqs(); updatePromptOut();
+    toast('Anforderung gelöscht', { action: 'Rückgängig', fn: undo });
+  },
+  'req-reset'(el) { delete C.prompt.reqEdit[el.dataset.key]; changed(); refreshReqs(); updatePromptOut(); },
+  'req-restore'() {
+    const p = C.prompt;
+    if (!Object.keys(p.reqOff).length && !Object.keys(p.reqEdit).length && !p.reqCustom.length && p.language === 'de') { toast('Es sind bereits die Standardanforderungen aktiv.'); return; }
+    p.reqOff = {}; p.reqEdit = {}; p.reqCustom = []; p.language = 'de';
+    changed(); renderMain(false);
+    toast('Standardanforderungen wiederhergestellt', { action: 'Rückgängig', fn: undo });
+  },
+
   /* Prompt */
   'copy-prompt'() { copyText(buildPrompt(), 'Prompt kopiert – jetzt in Claude einfügen'); },
   'download-prompt'() { deliverFile(new Blob([buildPrompt()], { type: 'text/markdown' }), `${fileBase()}_prompt.md`, { label: 'Prompt' }); },
@@ -2749,6 +2841,29 @@ const ACTIONS = {
 /* =====================================================================
    Globale Events
    ===================================================================== */
+function onReqInput(el) {
+  const p = C.prompt, key = el.dataset.reqKey;
+  if (el.dataset.reqField === 'on') {
+    if (el.checked) delete p.reqOff[key]; else p.reqOff[key] = true;
+    el.closest('.req').classList.toggle('off', !el.checked);
+    changed(); updatePromptOut(); refreshReqCount(); return;
+  }
+  const def = (reqList().find(r => r.key === key) || {}).def;
+  const wasEdited = p.reqEdit[key] != null;
+  if (el.value === def) delete p.reqEdit[key]; else p.reqEdit[key] = el.value;
+  if (wasEdited !== (p.reqEdit[key] != null)) { // Kennzeichnung „geändert“ und Reset-Knopf aktualisieren
+    const row = el.closest('.req'), btn = $('[data-act=req-reset]', row), tagEl = $('.req-tag', row);
+    if (btn) btn.disabled = p.reqEdit[key] == null;
+    if (tagEl) tagEl.textContent = tagEl.textContent.replace(' · geändert', '') + (p.reqEdit[key] != null ? ' · geändert' : '');
+  }
+  changed({ typing: true }); updatePromptOut(); refreshReqCount();
+}
+function refreshReqCount() {
+  const el = $('#req-list .req-count'); if (!el) return;
+  const list = reqList();
+  el.textContent = `${list.filter(r => r.on && r.text.trim()).length} von ${list.length} Anforderungen aktiv${C.prompt.language !== 'none' ? ' + Sprache' : ''}`;
+}
+
 function onBind(el) {
   const path = el.dataset.bind;
   let val = el.type === 'checkbox' ? el.checked : el.value;
@@ -2767,7 +2882,14 @@ function onBind(el) {
       if (!isText) refreshSteps();
     }
   }
-  if (path.startsWith('prompt.')) updatePromptOut();
+  if (path.startsWith('prompt.')) {
+    updatePromptOut();
+    if (path === 'prompt.target') refreshReqs();
+    else if (path === 'prompt.language' || path.startsWith('prompt.reqCustom.')) {
+      refreshReqCount();
+      if (path.endsWith('.on')) { const row = el.closest('.req'); row && row.classList.toggle('off', !el.checked); }
+    }
+  }
   if (path.startsWith('features.') && path.endsWith('.priority')) { const s = $('#feature-summary'); if (s) s.innerHTML = featureSummary(); }
   changed({ typing: isText });
 }
@@ -2783,10 +2905,12 @@ function bindGlobal() {
     const el = e.target;
     if (el.tagName === 'TEXTAREA') autoGrow(el);
     if (el.dataset && el.dataset.bind && !(el.tagName === 'SELECT' || el.type === 'radio' || el.type === 'checkbox')) onBind(el);
+    else if (el.dataset && el.dataset.reqKey && el.tagName === 'TEXTAREA') onReqInput(el);
   });
   document.addEventListener('change', e => {
     const el = e.target;
     if (el.dataset && el.dataset.bind && (el.tagName === 'SELECT' || el.type === 'radio' || el.type === 'checkbox')) onBind(el);
+    else if (el.dataset && el.dataset.reqKey && el.type === 'checkbox') onReqInput(el);
   });
   document.addEventListener('focusin', e => {
     const step = e.target.closest && e.target.closest('#steps [data-step]');
