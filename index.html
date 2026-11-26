@@ -213,6 +213,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .req-tag{font-size:11px;font-weight:650;color:var(--muted)}
 .req-tag.pf{color:#2f7fbf}
 .req-tag.own{color:var(--accent)}
+.req-tag.out{color:#7a5cc2}
 .req .icon-btn{margin-top:2px}
 .prompt-out{white-space:pre-wrap;word-break:break-word;font:12.5px/1.6 var(--mono);background:#191d2a;color:#e6e8ef;border-radius:10px;padding:18px 20px;max-height:620px;overflow:auto;margin:0}
 .prompt-stats{font-size:12px;color:var(--muted)}
@@ -381,7 +382,7 @@ dialog::backdrop{background:rgba(20,24,40,.42);backdrop-filter:blur(2px)}
    Einzelne Datei, keine externen Abhängigkeiten.
    ===================================================================== */
 
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 const SCHEMA = 'konzeptwerk/1';
 const STORE_KEY = 'konzeptwerk.v1';
 const SVG_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -485,10 +486,68 @@ const TARGETS = {
   },
 };
 
-const MODES = {
-  build: { label: 'Direkt bauen', text: 'Baue die Anwendung direkt vollständig und lauffähig. Triff bei Lücken im Konzept sinnvolle Annahmen und liste diese Annahmen am Ende kurz auf.' },
+const MODES = { // {X} = „die Anwendung“ bzw. „den Prototyp“
+  build: { label: 'Direkt bauen', text: 'Baue {X} direkt vollständig und lauffähig. Triff bei Lücken im Konzept sinnvolle Annahmen und liste diese Annahmen am Ende kurz auf.' },
   ask: { label: 'Erst Rückfragen', text: 'Stelle mir zuerst maximal 5 gezielte Rückfragen zu Unklarheiten oder Lücken im Konzept. Beginne erst nach meinen Antworten mit der Umsetzung.' },
   plan: { label: 'Erst Plan', text: 'Erstelle zuerst einen Umsetzungsplan (Architektur, Datenstruktur, Screens bzw. Komponenten, Reihenfolge der Schritte) und warte auf meine Freigabe, bevor du Code schreibst.' },
+};
+
+/** Was soll die KI liefern? Finale Lösung oder Prototyp, der sich auf die Zielplattform übertragen lässt */
+const OUTPUTS = {
+  final: {
+    label: 'Finale Lösung', hint: 'Die KI baut direkt die fertige Anwendung auf der gewählten Zielplattform.',
+    text: '', reqs: [],
+  },
+  artifact: {
+    label: 'Prototyp als Claude-Artifact', hint: 'Klickbarer Prototyp direkt im Claude-Chat – ideal zum schnellen Ausprobieren. Er wird so aufgebaut, dass er sich 1:1 auf die Zielplattform übertragen lässt.',
+    text: 'Erstelle einen klickbaren Prototyp als Claude-Artifact (interaktive React- oder HTML-Ansicht direkt im Chat).',
+    reqs: [
+      'Alle Must-have-Funktionen sind klickbar und mit Beispieldaten durchspielbar; die Logik darf vereinfacht sein.',
+      'Keine Browser-Speicher-APIs (localStorage, sessionStorage) verwenden – den Zustand nur im Arbeitsspeicher halten.',
+      'Keine Server- oder API-Aufrufe; Daten und Schnittstellen mit realistischen Beispieldaten simulieren.',
+      'Oben ein dezenter Hinweis „Prototyp“, damit er nicht mit der finalen Lösung verwechselt wird.',
+    ],
+  },
+  mockup: {
+    label: 'HTML-Mockup', hint: 'Klickbares Mockup als einzelne HTML-Datei – zum Öffnen im Browser und Weitergeben an Kollegen oder Kunden. Aufgebaut wie die spätere Zielplattform.',
+    text: 'Erstelle ein klickbares HTML-Mockup als einzelne, eigenständige HTML-Datei (HTML, CSS, Vanilla-JavaScript), die sich per Doppelklick im Browser öffnen und weitergeben lässt.',
+    reqs: [
+      'Alle Must-have-Funktionen sind klickbar und mit Beispieldaten durchspielbar; die Logik darf vereinfacht sein.',
+      'Keine externen CDNs und keine Server-Aufrufe; Beispieldaten direkt in der Datei.',
+      'Alle Screens sind erreichbar, z. B. über eine Navigation oder Screen-Übersicht.',
+      'Oben ein dezenter Hinweis „Mockup“, damit es nicht mit der finalen Lösung verwechselt wird.',
+    ],
+  },
+};
+const isProto = () => C.prompt.output !== 'final';
+
+/** Vorgaben, damit ein Prototyp auf die Zielplattform übertragbar ist */
+const PROTO_REQS = {
+  powerapps: [
+    'Screens wie Canvas-App-Screens aufbauen (feste Tablet-Fläche im Querformat, z. B. 1366 × 768) und zwischen Screens wie mit Navigate() wechseln.',
+    'Nur Bedienelemente verwenden, die es in Power Apps gibt: Katalog (Gallery), Formular, Texteingabe, Dropdown/Kombinationsfeld, Datumsauswahl, Umschalter, Schaltfläche, Beschriftung, Symbol.',
+    'Daten genau in der Struktur der geplanten SharePoint-Listen halten (gleiche Spaltennamen und Spaltentypen).',
+    'Logik nur so umsetzen, wie sie in Power Fx abbildbar ist (Filter, LookUp, Patch, Collect); nichts verwenden, was Power Apps nicht kann (z. B. Drag & Drop, freie Animationen, verschachtelte Galerien in Galerien).',
+    'Zusätzlich einen Übertragungsleitfaden liefern: Screens mit ihren Steuerelementen, SharePoint-Listen mit Spalten, die wichtigsten Power-Fx-Formeln und benötigte Power-Automate-Flows.',
+  ],
+  python: [
+    'Oberfläche nur mit Elementen aufbauen, die das geplante Python-Framework (z. B. Streamlit) bietet; Seitenaufbau wie im Framework (Seiten, Seitenleiste, Formulare, Tabellen).',
+    'Datenmodell und Geschäftslogik klar von der Oberfläche trennen und so formulieren, dass sie direkt in Python übernommen werden können.',
+    'Zusätzlich einen Übertragungsleitfaden liefern: Seiten bzw. Module, Datenmodell (Klassen oder Tabellen) und die Kernfunktionen.',
+  ],
+  react: [
+    'Komponentenstruktur, State und Props so anlegen, wie sie in der finalen React-App verwendet werden.',
+    'Styling mit Tailwind-Klassen.',
+    'Daten über eine austauschbare Datenschicht laden, damit sie später durch echte Speicherung ersetzt werden kann.',
+  ],
+  html: [
+    'Aufbau, Datenstruktur und Logik so anlegen, dass der Prototyp direkt zur finalen HTML-App ausgebaut werden kann (Vanilla-JavaScript, keine Frameworks).',
+    'Datenzugriff in eigenen Funktionen kapseln, damit später Speicherung und JSON-Export ergänzt werden können.',
+  ],
+  free: [
+    'Zuerst die passende Zielplattform für die finale Umsetzung wählen, kurz begründen und den Prototyp so bauen, dass er sich darauf übertragen lässt.',
+    'Zusätzlich einen Übertragungsleitfaden für die finale Umsetzung liefern.',
+  ],
 };
 
 const LANGS = {
@@ -581,7 +640,7 @@ function newConcept() {
     diagrams: [newDiagram()],
     tech: { platform: '', stack: '', dataObjects: [], integrations: '' },
     open: { questions: [], risks: [], assumptions: '' },
-    prompt: { target: 'html', mode: 'build', extra: '', language: 'de', reqOff: {}, reqEdit: {}, reqCustom: [] },
+    prompt: { target: 'html', output: 'final', hasProto: false, mode: 'build', extra: '', language: 'de', reqOff: {}, reqEdit: {}, reqCustom: [] },
   };
 }
 function deepMerge(base, src) {
@@ -596,13 +655,15 @@ function deepMerge(base, src) {
 }
 function normalize(raw) {
   const c = deepMerge(newConcept(), raw || {});
-  const OBJ_KEYS = ['reqOff', 'reqEdit', 'reqCustom'];
+  const OBJ_KEYS = ['reqOff', 'reqEdit', 'reqCustom', 'hasProto'];
   ['meta', 'goal', 'audience', 'tech', 'open', 'prompt'].forEach(sec => {
     Object.keys(c[sec]).forEach(k => { if (OBJ_KEYS.includes(k)) return; if (!Array.isArray(c[sec][k]) && typeof c[sec][k] !== 'string') c[sec][k] = str(c[sec][k]); });
   });
   { // Anforderungen an die Umsetzung
     const pr = c.prompt, isObj = v => v && typeof v === 'object' && !Array.isArray(v);
     if (!LANGS[pr.language]) pr.language = 'de';
+    if (!OUTPUTS[pr.output]) pr.output = 'final';
+    pr.hasProto = pr.hasProto === true;
     pr.reqOff = isObj(pr.reqOff) ? Object.fromEntries(Object.entries(pr.reqOff).filter(([, v]) => v === true)) : {};
     pr.reqEdit = isObj(pr.reqEdit) ? Object.fromEntries(Object.entries(pr.reqEdit).filter(([, v]) => typeof v === 'string')) : {};
     pr.reqCustom = (Array.isArray(pr.reqCustom) ? pr.reqCustom : []).filter(x => x && typeof x === 'object').map(x => ({ id: str(x.id) || uid('r'), text: str(x.text), on: x.on !== false }));
@@ -927,7 +988,10 @@ const RENDER = {
     const seg = (name, obj, val) => `<div class="seg">${Object.entries(obj).map(([k, o]) => `<label><input type="radio" name="${name}" value="${k}" data-bind="prompt.${name}"${k === val ? ' checked' : ''}>${esc(o.label)}</label>`).join('')}</div>`;
     return `${secHead('prompt', 'Aus deinem Konzept wird ein fertiger Prompt für Claude oder ein anderes KI-Werkzeug. Kopieren, einfügen – und die Software bauen lassen.')}
     <div class="card"><div class="grid">
-      <div class="field s6"><span class="lbl">Zielplattform</span>${seg('target', TARGETS, p.target)}</div>
+      <div class="field s6"><span class="lbl">Zielplattform der finalen Lösung</span>${seg('target', TARGETS, p.target)}</div>
+      <div class="field s6"><span class="lbl">Ergebnis</span>${seg('output', OUTPUTS, p.output)}
+        <span class="hint" id="output-hint">${esc(OUTPUTS[p.output].hint)}</span>
+        <label class="chk" id="has-proto" style="margin-top:4px;${p.output === 'final' ? '' : 'display:none'}"><input type="checkbox" data-bind="prompt.hasProto" ${p.hasProto ? 'checked' : ''}> Es gibt schon einen Prototyp – als Vorlage für die finale Lösung verwenden</label></div>
       <div class="field s6"><span class="lbl">Vorgehen der KI</span>${seg('mode', MODES, p.mode)}</div>
       ${field({ label: 'Zusätzliche Hinweise an die KI', bind: 'prompt.extra', type: 'textarea', ph: 'z. B. bestehende Listen, Hintergrund zum Projekt, besondere Wünsche an Design oder Code', span: 6 })}
     </div></div>
@@ -1972,22 +2036,27 @@ function conceptMarkdown(c) {
 
 /** Alle Anforderungen (Standard, Plattform, eigene) mit aktuellem Text und Status */
 function reqList() {
-  const p = C.prompt, t = TARGETS[p.target] || TARGETS.free;
+  const p = C.prompt, t = TARGETS[p.target] || TARGETS.free, out = OUTPUTS[p.output] || OUTPUTS.final;
   const std = [...STD_REQS.map(([key, text]) => ({ key, def: text, kind: 'std' })),
-    ...t.reqs.map((text, i) => ({ key: `${p.target}-${i + 1}`, def: text, kind: 'platform' }))];
+    ...out.reqs.map((text, i) => ({ key: `o-${p.output}-${i + 1}`, def: text, kind: 'output' })),
+    ...(isProto()
+      ? (PROTO_REQS[p.target] || []).map((text, i) => ({ key: `${p.target}-p${i + 1}`, def: text, kind: 'transfer' }))
+      : t.reqs.map((text, i) => ({ key: `${p.target}-${i + 1}`, def: text, kind: 'platform' })))];
   return [
     ...std.map(r => ({ ...r, text: p.reqEdit[r.key] ?? r.def, on: !p.reqOff[r.key], edited: p.reqEdit[r.key] != null && p.reqEdit[r.key] !== r.def })),
     ...p.reqCustom.map((r, i) => ({ key: r.id, i, text: r.text, on: r.on, kind: 'own' })),
   ];
 }
-function activeReqs() {
+function activeReqs(kinds) {
   const lang = LANGS[C.prompt.language] || LANGS.de;
-  return [...(lang.text ? [lang.text] : []), ...reqList().filter(r => r.on && r.text.trim()).map(r => r.text.trim())];
+  const list = reqList().filter(r => r.on && r.text.trim() && (!kinds || kinds.includes(r.kind))).map(r => r.text.trim());
+  return (!kinds || kinds.includes('std')) && lang.text ? [lang.text, ...list] : list;
 }
 function renderReqs() {
   const list = reqList();
   const on = list.filter(r => r.on && r.text.trim()).length;
-  const tag = { std: ['Standard', ''], platform: [`Plattform: ${TARGETS[C.prompt.target].label}`, 'pf'], own: ['Eigene', 'own'] };
+  const tag = { std: ['Standard', ''], platform: [`Plattform: ${TARGETS[C.prompt.target].label}`, 'pf'], transfer: [`Übertragbar auf: ${TARGETS[C.prompt.target].label}`, 'pf'],
+    output: [`Ergebnis: ${OUTPUTS[C.prompt.output].label}`, 'out'], own: ['Eigene', 'own'] };
   return `<div class="req-count">${on} von ${list.length} Anforderungen aktiv${C.prompt.language !== 'none' ? ' + Sprache' : ''}</div>` + list.map(r => `
     <div class="req ${r.on ? '' : 'off'}" data-req-row="${esc(r.key)}">
       <input type="checkbox" class="req-chk" ${r.on ? 'checked' : ''} ${r.kind === 'own' ? `data-bind="prompt.reqCustom.${r.i}.on"` : `data-req-key="${esc(r.key)}" data-req-field="on"`} title="Im Prompt verwenden">
@@ -2009,20 +2078,34 @@ function refreshReqs() {
 }
 
 function buildPrompt() {
-  const p = C.prompt, t = TARGETS[p.target] || TARGETS.free;
+  const p = C.prompt, t = TARGETS[p.target] || TARGETS.free, out = OUTPUTS[p.output] || OUTPUTS.final;
   const name = C.meta.name.trim() || 'die Anwendung';
-  const reqs = activeReqs();
-  const parts = [
-    `# Auftrag: „${name}“ umsetzen`,
-    'Du bist ein erfahrener Software-Entwickler mit gutem Gespür für UX. Setze die unten beschriebene Software auf Basis des folgenden Konzepts um.',
-    `## Zielplattform\n${t.text}${C.tech.platform.trim() && p.target === 'free' ? `\nIm Konzept genannt: ${C.tech.platform.trim()}` : ''}`,
-    '---',
-    conceptMarkdown(C),
-    '---',
-  ];
-  if (reqs.length) parts.push(`## Anforderungen an die Umsetzung\n${reqs.map(r => `- ${r}`).join('\n')}`);
+  const proto = isProto();
+  const platformNote = C.tech.platform.trim() && p.target === 'free' ? `\nIm Konzept genannt: ${C.tech.platform.trim()}` : '';
+  const list = rs => rs.map(r => `- ${r}`).join('\n');
+  const parts = [];
+  if (proto) {
+    parts.push(`# Auftrag: ${p.output === 'mockup' ? 'HTML-Mockup' : 'Prototyp'} für „${name}“ erstellen`,
+      'Du bist ein erfahrener Software-Entwickler mit gutem Gespür für UX. Erstelle auf Basis des folgenden Konzepts einen klickbaren Prototyp. Er dient zur Abstimmung mit Kollegen und Kunden und als Vorlage für die finale Umsetzung – deshalb muss er so aufgebaut sein, dass er sich direkt auf die Zielplattform der finalen Lösung übertragen lässt.',
+      `## Ergebnis\n${out.text}`,
+      `## Zielplattform der finalen Lösung\n${t.text}${platformNote}\nDer Prototyp muss so gebaut sein, dass er sich auf diese Plattform übertragen lässt – nicht nur optisch, sondern auch in Datenstruktur und Logik.`);
+  } else {
+    parts.push(`# Auftrag: „${name}“ umsetzen`,
+      'Du bist ein erfahrener Software-Entwickler mit gutem Gespür für UX. Setze die unten beschriebene Software auf Basis des folgenden Konzepts um.',
+      `## Zielplattform\n${t.text}${platformNote}`);
+    if (p.hasProto) parts.push('## Vorlage: vorhandener Prototyp\nEin Prototyp dieser Anwendung liegt bereits vor (ich füge ihn bei). Übernimm Screens, Aufbau, Datenstruktur und Logik daraus und setze sie auf der Zielplattform um. Wo der Prototyp vom Konzept abweicht, hat der Prototyp Vorrang – weise kurz auf solche Abweichungen hin.');
+  }
+  parts.push('---', conceptMarkdown(C), '---');
+  if (proto) {
+    const a = activeReqs(['std', 'output', 'own']), b = activeReqs(['transfer']);
+    if (a.length) parts.push(`## Anforderungen an den Prototyp\n${list(a)}`);
+    if (b.length) parts.push(`## Übertragbarkeit auf die finale Lösung (${t.label})\n${list(b)}`);
+  } else {
+    const a = activeReqs();
+    if (a.length) parts.push(`## Anforderungen an die Umsetzung\n${list(a)}`);
+  }
   if (p.extra.trim()) parts.push(`## Zusätzliche Hinweise\n${p.extra.trim()}`);
-  parts.push(`## Vorgehen\n${MODES[p.mode].text}`);
+  parts.push(`## Vorgehen\n${MODES[p.mode].text.replace('{X}', proto ? 'den Prototyp' : 'die Anwendung')}`);
   return parts.join('\n\n');
 }
 
@@ -2884,7 +2967,11 @@ function onBind(el) {
   }
   if (path.startsWith('prompt.')) {
     updatePromptOut();
-    if (path === 'prompt.target') refreshReqs();
+    if (path === 'prompt.target' || path === 'prompt.output') refreshReqs();
+    if (path === 'prompt.output') {
+      const h = $('#output-hint'); if (h) h.textContent = OUTPUTS[C.prompt.output].hint;
+      const hp = $('#has-proto'); if (hp) hp.style.display = C.prompt.output === 'final' ? '' : 'none';
+    }
     else if (path === 'prompt.language' || path.startsWith('prompt.reqCustom.')) {
       refreshReqCount();
       if (path.endsWith('.on')) { const row = el.closest('.req'); row && row.classList.toggle('off', !el.checked); }
